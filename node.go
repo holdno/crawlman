@@ -23,7 +23,7 @@ func (m *CrawlmanNodes) Len() int {
 	return i
 }
 
-func (m *CrawlmanNodes) MustGet(key string) *CrawlmanNode {
+func (m *CrawlmanNodes) MustGet(key int64) *CrawlmanNode {
 	value, ok := m.Map.Load(key)
 	if ok {
 		return value.(*CrawlmanNode)
@@ -32,7 +32,7 @@ func (m *CrawlmanNodes) MustGet(key string) *CrawlmanNode {
 	}
 }
 
-func (m *CrawlmanNodes) Get(key string) (*CrawlmanNode, bool) {
+func (m *CrawlmanNodes) Get(key int64) (*CrawlmanNode, bool) {
 	value, ok := m.Map.Load(key)
 	if ok {
 		return value.(*CrawlmanNode), ok
@@ -41,7 +41,7 @@ func (m *CrawlmanNodes) Get(key string) (*CrawlmanNode, bool) {
 	}
 }
 
-func (m *CrawlmanNodes) Set(key string, value *CrawlmanNode) {
+func (m *CrawlmanNodes) Set(key int64, value *CrawlmanNode) {
 	m.Map.Store(key, value)
 }
 
@@ -54,9 +54,9 @@ func (m *CrawlmanNodes) ToSlice() []*CrawlmanNode {
 	return s
 }
 
-func (m *CrawlmanNodes) Range(f func(k string, v *CrawlmanNode) bool) {
+func (m *CrawlmanNodes) Range(f func(k int64, v *CrawlmanNode) bool) {
 	m.Map.Range(func(key, value interface{}) bool {
-		ok := f(key.(string), value.(*CrawlmanNode))
+		ok := f(key.(int64), value.(*CrawlmanNode))
 		return ok
 	})
 }
@@ -73,10 +73,10 @@ func toJson(c *CrawlmanNode) (string, error) {
 	return string(jsonbyte), nil
 }
 
-func mapToStruct(id string) []*CrawlmanNode {
+func mapToStruct(id int64) []*CrawlmanNode {
 	var c []*CrawlmanNode
 	nodes.MustGet(id)
-	nodes.Range(func(k string, v *CrawlmanNode) bool {
+	nodes.Range(func(k int64, v *CrawlmanNode) bool {
 		c = append(c, v)
 		return true
 	})

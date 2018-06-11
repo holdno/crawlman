@@ -2,10 +2,10 @@ package crawlman
 
 import (
 	"bufio"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/holdno/snowFlakeByGo"
 	"golang.org/x/net/html/charset"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
@@ -24,10 +24,13 @@ type DomConfig struct {
 	Result string `json:"result"`
 }
 
-var engine sync.Map
+var (
+	engine    sync.Map
+	idWork, _ = snowFlakeByGo.NewWorker(1)
+)
 
 type CrawlmanNode struct {
-	Id            string        `json:"-"`
+	Id            int64         `json:"-"`
 	Name          string        `json:"name"`
 	Interval      time.Duration `json:"interval"`
 	UserAgent     []string      `json:"useragent"`
@@ -52,8 +55,12 @@ type CrawlmanNode struct {
 }
 
 // 获取采集节点id
-func (c *CrawlmanNode) GetId() string {
-	return strings.Replace(base64.StdEncoding.EncodeToString([]byte(c.Name)), "/", "_", -1)
+func (c *CrawlmanNode) GetId() int64 {
+	if c.Id != 0 {
+		return c.Id
+	} else {
+		return idWork.GetId()
+	}
 }
 
 // 健康状态监测
@@ -261,7 +268,9 @@ func (c *CrawlmanNode) JoinJob(a interface{ Load(a *Article) }) error {
 	// TODO 判断当前node是否已经存在定时任务
 	c.Interface = a
 	c.stop = make(chan struct{})
-	c.Id = c.GetId()
+	if c.Id == 0 {
+		c.Id = c.GetId()
+	}
 	nodes.Set(c.Id, c)
 	if c.Status == "open" {
 		go c.start()
@@ -270,7 +279,7 @@ func (c *CrawlmanNode) JoinJob(a interface{ Load(a *Article) }) error {
 	return nil
 }
 
-func Start(id string) bool {
+func Start(id int64) bool {
 	node, exist := GetNode(id)
 	if exist {
 		go node.start()
@@ -317,7 +326,7 @@ func (c *CrawlmanNode) start() {
 // 启动全部采集任务
 func StartAll(a interface{ Load(a *Article) }) {
 	configs := GetAllConfig()
-	configs.Range(func(k string, v *CrawlmanNode) bool {
+	configs.Range(func(k int64, v *CrawlmanNode) bool {
 		v.Interface = a
 		go v.start()
 		return true
@@ -326,7 +335,7 @@ func StartAll(a interface{ Load(a *Article) }) {
 
 // 停止全部采集任务
 func StopAll() {
-	nodes.Range(func(k string, v *CrawlmanNode) bool {
+	nodes.Range(func(k int64, v *CrawlmanNode) bool {
 		v.Stop()
 		return true
 	})
@@ -353,7 +362,7 @@ func determineEncoding(r io.Reader) (encoding.Encoding, string) {
 	return e, n
 }
 
-func GetNode(id string) (*CrawlmanNode, bool) {
+func GetNode(id int64) (*CrawlmanNode, bool) {
 	node, ok := nodes.Get(id)
 	if !ok {
 		return nil, ok
@@ -365,7 +374,7 @@ func GetNodes() *CrawlmanNodes {
 	return nodes
 }
 
-func Delete(id string) error {
+func Delete(id int64) error {
 	node, ok := nodes.Get(id)
 	if !ok {
 		return errors.New("id not exist")
