@@ -3,6 +3,7 @@ package crawlman
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -56,11 +57,39 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
+// 删除采集节点
+func (c *CrawlmanNode) delete() error {
+	var err error
+	c.lock.config.Lock()
+	defer c.lock.config.Unlock()
+	ok, _ := PathExists(filePath)
+	if !ok {
+		return errors.New("path not found")
+	}
+	filename := filePath + c.Id + ".json"
+	if checkFileIsExist(filename) {
+		err = os.Remove(filename)
+		if err != nil {
+			return err
+		}
+		nodes.Delete(c.Id)
+		return nil
+	}
+	// 判断log目录是否存在
+	// 是的话删除整个log目录
+	ok, _ = PathExists(filePath + "log/" + c.Id)
+	if ok {
+		os.RemoveAll(filePath + "log/" + c.Id)
+	}
+	return errors.New("file not exist")
+}
+
+// 保存配置到配置文件
 func (c *CrawlmanNode) toFile() {
 	var f *os.File
 	var err error
-	mu.Lock()
-	defer mu.Unlock()
+	c.lock.config.Lock()
+	defer c.lock.config.Unlock()
 	ok, _ := PathExists(filePath)
 	if !ok {
 		err := os.Mkdir(filePath, os.ModePerm)
@@ -90,6 +119,49 @@ func (c *CrawlmanNode) toFile() {
 	}
 	w.Flush()
 	f.Close()
+}
+
+// 将日志写入文件
+func (c *CrawlmanNode) wLog(content string) {
+	if content == "" {
+		return
+	}
+	go func() {
+		content = fmt.Sprintf("%s,%s\n", time.Now().Format("2006-01-02 15:04:05"), content)
+		var f *os.File
+		var err error
+		c.lock.log.Lock()
+		defer c.lock.log.Unlock()
+		path := filePath + "log/" + c.Id + "/"
+		ok, _ := PathExists(path)
+		if !ok {
+			err := os.MkdirAll(path, os.ModePerm)
+			if err != nil {
+				fmt.Printf("mkdir failed![%v]\n", err)
+				panic(err)
+			}
+		}
+		filename := path + time.Now().Format("2006-01-02") + ".json"
+		if checkFileIsExist(filename) { //如果文件存在
+			f, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666) //打开文件
+			fmt.Println("打开文件")
+		} else {
+			f, err = os.Create(filename) //创建文件
+		}
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		w := bufio.NewWriter(f) //创建新的 Writer 对象
+		_, err = w.WriteString(content)
+		if err != nil {
+			panic(err)
+		}
+		w.Flush()
+		f.Close()
+		fmt.Println("写入成功")
+	}()
+
 }
 
 func checkFileIsExist(filePath string) bool {
@@ -127,8 +199,14 @@ func LoadConfig(filename string) (*CrawlmanNode, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(string(content))
 	nodeStruct = jsonToStruct(content)
-	nodeStruct.client = &http.Client{Timeout: time.Duration(5) * time.Second}
-	nodes.Set(nodeStruct.getId(), nodeStruct)
+	if nodeStruct != nil {
+		nodeStruct.client = &http.Client{Timeout: time.Duration(5) * time.Second}
+		nodes.Set(nodeStruct.GetId(), nodeStruct)
+	} else {
+		panic("从配置文件中加载采集节点失败")
+	}
+
 	return nodeStruct, nil
 }

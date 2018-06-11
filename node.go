@@ -6,7 +6,6 @@ import (
 )
 
 var (
-	mu         sync.Mutex
 	nodeStruct *CrawlmanNode
 	nodes      = new(CrawlmanNodes)
 )
