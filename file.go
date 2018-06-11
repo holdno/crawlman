@@ -159,9 +159,8 @@ func (c *CrawlmanNode) wLog(content string) {
 		}
 		w.Flush()
 		f.Close()
-		fmt.Println("写入成功")
+		fmt.Println(content)
 	}()
-
 }
 
 func checkFileIsExist(filePath string) bool {
