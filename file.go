@@ -66,7 +66,7 @@ func (c *CrawlmanNode) delete() error {
 	if !ok {
 		return errors.New("path not found")
 	}
-	filename := filePath + c.Id + ".json"
+	filename := fmt.Sprintf("%s%d.json", filePath, c.Id)
 	if checkFileIsExist(filename) {
 		err = os.Remove(filename)
 		if err != nil {
@@ -77,9 +77,9 @@ func (c *CrawlmanNode) delete() error {
 	}
 	// 判断log目录是否存在
 	// 是的话删除整个log目录
-	ok, _ = PathExists(filePath + "log/" + c.Id)
+	ok, _ = PathExists(fmt.Sprintf("%slog/%d", filePath, c.Id))
 	if ok {
-		os.RemoveAll(filePath + "log/" + c.Id)
+		os.RemoveAll(fmt.Sprintf("%slog/%d", filePath, c.Id))
 	}
 	return errors.New("file not exist")
 }
@@ -98,7 +98,7 @@ func (c *CrawlmanNode) toFile() {
 			panic(err)
 		}
 	}
-	filename := filePath + c.Id + ".json"
+	filename := fmt.Sprintf("%s%d.json", filePath, c.Id)
 	if checkFileIsExist(filename) { //如果文件存在
 		f, err = os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_TRUNC, 0666) //打开文件
 	} else {
@@ -132,7 +132,7 @@ func (c *CrawlmanNode) wLog(content string) {
 		var err error
 		c.lock.log.Lock()
 		defer c.lock.log.Unlock()
-		path := filePath + "log/" + c.Id + "/"
+		path := fmt.Sprintf("%slog/%d/", filePath, c.Id)
 		ok, _ := PathExists(path)
 		if !ok {
 			err := os.MkdirAll(path, os.ModePerm)

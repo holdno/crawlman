@@ -61,7 +61,7 @@ func (m *CrawlmanNodes) Range(f func(k int64, v *CrawlmanNode) bool) {
 	})
 }
 
-func (m *CrawlmanNodes) Delete(key string) {
+func (m *CrawlmanNodes) Delete(key int64) {
 	m.Map.Delete(key)
 }
 
