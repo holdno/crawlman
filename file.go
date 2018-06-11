@@ -158,7 +158,7 @@ func (c *CrawlmanNode) wLog(content string) {
 		}
 		w.Flush()
 		f.Close()
-		fmt.Println(content)
+		fmt.Print(content)
 	}()
 }
 
@@ -197,7 +197,6 @@ func LoadConfig(filename string) (*CrawlmanNode, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(content))
 	nodeStruct = jsonToStruct(content)
 	if nodeStruct != nil {
 		nodeStruct.client = &http.Client{Timeout: time.Duration(5) * time.Second}
