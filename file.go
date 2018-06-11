@@ -144,7 +144,6 @@ func (c *CrawlmanNode) wLog(content string) {
 		filename := path + time.Now().Format("2006-01-02") + ".json"
 		if checkFileIsExist(filename) { //如果文件存在
 			f, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666) //打开文件
-			fmt.Println("打开文件")
 		} else {
 			f, err = os.Create(filename) //创建文件
 		}

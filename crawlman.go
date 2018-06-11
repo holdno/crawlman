@@ -30,7 +30,7 @@ var (
 )
 
 type CrawlmanNode struct {
-	Id            int64         `json:"-"`
+	Id            int64         `json:"id"`
 	Name          string        `json:"name"`
 	Interval      time.Duration `json:"interval"`
 	UserAgent     []string      `json:"useragent"`
