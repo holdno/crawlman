@@ -202,7 +202,9 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 					return
 				}
 				defer resp.Body.Close()
-				doc, err := goquery.NewDocumentFromReader(resp.Body)
+				e, _ := determineEncoding(resp.Body)
+				utf8Reader := transform.NewReader(resp.Body, e.NewDecoder())
+				doc, err := goquery.NewDocumentFromReader(utf8Reader)
 				if err != nil {
 					// 列表采集失败
 					fmt.Println(err)
@@ -357,8 +359,7 @@ func determineEncoding(r io.Reader) (encoding.Encoding, string) {
 	if err != nil {
 		panic(err)
 	}
-	e, n, c := charset.DetermineEncoding(bytes, "")
-	fmt.Println(e, n, c)
+	e, n, _ := charset.DetermineEncoding(bytes, "")
 	return e, n
 }
 

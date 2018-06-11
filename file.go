@@ -201,7 +201,7 @@ func LoadConfig(filename string) (*CrawlmanNode, error) {
 	nodeStruct = jsonToStruct(content)
 	if nodeStruct != nil {
 		nodeStruct.client = &http.Client{Timeout: time.Duration(5) * time.Second}
-		nodes.Set(nodeStruct.GetId(), nodeStruct)
+		nodes.Set(nodeStruct.Id, nodeStruct)
 	} else {
 		panic("从配置文件中加载采集节点失败")
 	}
