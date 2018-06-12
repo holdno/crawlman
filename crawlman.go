@@ -167,7 +167,7 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 					if c.warning < 1 {
 						c.warning = 1
 					}
-					c.wLog("列表数据结构发生了变化\n")
+					c.wLog("列表数据结构发生了变化")
 					return
 				}
 			} else if v.Method == "" {
@@ -198,7 +198,7 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 					if c.warning < 2 {
 						c.warning = 2
 					}
-					c.wLog(fmt.Sprintf("目标网站无法打开,%s;\n", content))
+					c.wLog(fmt.Sprintf("目标网站无法打开,%s;", content))
 					return
 				}
 				defer resp.Body.Close()
@@ -211,7 +211,7 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 					if c.warning < 2 {
 						c.warning = 2
 					}
-					c.wLog("内容采集失败\n")
+					c.wLog(fmt.Sprintf("内容采集失败,%v;", err))
 					return
 				}
 				for _, vv := range c.ContentConfig {
@@ -235,7 +235,7 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 									if c.warning < 2 {
 										c.warning = 2
 									}
-									c.wLog("富文本内容采集失败")
+									c.wLog(fmt.Sprintf("富文本内容采集失败,%v;", err))
 									return
 								}
 							}
