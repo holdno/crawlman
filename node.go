@@ -65,7 +65,7 @@ func (m *CrawlmanNodes) Delete(key int64) {
 	m.Map.Delete(key)
 }
 
-func toJson(c *CrawlmanNode) (string, error) {
+func ToJson(c *CrawlmanNode) (string, error) {
 	jsonbyte, err := json.Marshal(c)
 	if err != nil {
 		return "", err

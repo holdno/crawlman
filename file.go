@@ -12,23 +12,33 @@ import (
 	"time"
 )
 
+var DBbuffer interface {
+	Read(Id int64) *CrawlmanNode
+	ReadAll() *CrawlmanNodes
+	Write(node *CrawlmanNode) bool
+}
+
 const filePath = "./crawlmanConfig/"
 
 func GetAllConfig() *CrawlmanNodes {
-	files, err := ioutil.ReadDir(filePath)
-	if err != nil {
-		// panic(err)
-		err := os.Mkdir(filePath, os.ModePerm)
+	if DBbuffer != nil {
+		nodes = DBbuffer.ReadAll()
+	} else {
+		files, err := ioutil.ReadDir(filePath)
 		if err != nil {
-			fmt.Printf("mkdir failed![%v]\n", err)
-			panic(err)
+			// panic(err)
+			err := os.Mkdir(filePath, os.ModePerm)
+			if err != nil {
+				fmt.Printf("mkdir failed![%v]\n", err)
+				panic(err)
+			}
 		}
-	}
-	for _, f := range files {
-		filename := filePath + f.Name()
-		if !f.IsDir() && getExt(filename) == "json" {
-			// 这个操作会将所有配置信息写入nodes变量中
-			LoadConfig(filename)
+		for _, f := range files {
+			filename := filePath + f.Name()
+			if !f.IsDir() && getExt(filename) == "json" {
+				// 这个操作会将所有配置信息写入nodes变量中
+				LoadConfig(filename)
+			}
 		}
 	}
 	return nodes
@@ -85,9 +95,18 @@ func (c *CrawlmanNode) delete() error {
 }
 
 // 保存配置到配置文件
-func (c *CrawlmanNode) toFile() {
+func (c *CrawlmanNode) toFile() error {
+	j, err := ToJson(c)
+	if err != nil {
+		return err
+	}
+	if DBbuffer != nil {
+		ok := DBbuffer.Write(c)
+		if !ok {
+			return errors.New("write interface error")
+		}
+	}
 	var f *os.File
-	var err error
 	c.lock.config.Lock()
 	defer c.lock.config.Unlock()
 	ok, _ := PathExists(filePath)
@@ -95,7 +114,7 @@ func (c *CrawlmanNode) toFile() {
 		err := os.Mkdir(filePath, os.ModePerm)
 		if err != nil {
 			fmt.Printf("mkdir failed![%v]\n", err)
-			panic(err)
+			return err
 		}
 	}
 	filename := fmt.Sprintf("%s%d.json", filePath, c.Id)
@@ -105,17 +124,13 @@ func (c *CrawlmanNode) toFile() {
 		f, err = os.Create(filename) //创建文件
 	}
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
-	j, err := toJson(c)
-	if err != nil {
-		panic(err)
-	}
+
 	w := bufio.NewWriter(f) //创建新的 Writer 对象
 	_, err = w.WriteString(j)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	w.Flush()
 	f.Close()
@@ -170,7 +185,7 @@ func checkFileIsExist(filePath string) bool {
 	return exist
 }
 
-func jsonToStruct(j []byte) *CrawlmanNode {
+func JsonToNode(j []byte) *CrawlmanNode {
 	var a *CrawlmanNode
 	err := json.Unmarshal(j, &a)
 	if err != nil {
@@ -197,7 +212,7 @@ func LoadConfig(filename string) (*CrawlmanNode, error) {
 	if err != nil {
 		return nil, err
 	}
-	nodeStruct = jsonToStruct(content)
+	nodeStruct = JsonToNode(content)
 	if nodeStruct != nil {
 		nodeStruct.client = &http.Client{Timeout: time.Duration(5) * time.Second}
 		nodes.Set(nodeStruct.Id, nodeStruct)
