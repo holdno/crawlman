@@ -276,8 +276,9 @@ func (c *CrawlmanNode) JoinJob(a interface{ Load(a *Article) }) error {
 	nodes.Set(c.Id, c)
 	if c.Status == "open" {
 		go c.start()
+	} else {
+		c.toFile()
 	}
-	c.toFile()
 	return nil
 }
 
