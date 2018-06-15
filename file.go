@@ -13,7 +13,7 @@ import (
 )
 
 var DBbuffer interface {
-	Read(id int64) *CrawlmanNode
+	Read(id int64) (*CrawlmanNode, error)
 	ReadAll() error
 	Write(node *CrawlmanNode) error
 	Delete(id int64) error
