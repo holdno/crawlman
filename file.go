@@ -78,7 +78,7 @@ func PathExists(path string) (bool, error) {
 func (c *CrawlmanNode) delete() error {
 	if DBbuffer != nil {
 		err := DBbuffer.Delete(c.Id)
-		if err != nil {
+		if err == nil {
 			nodes.Delete(c.Id)
 		}
 		return err
