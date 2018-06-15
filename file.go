@@ -13,16 +13,17 @@ import (
 )
 
 var DBbuffer interface {
-	Read(Id int64) *CrawlmanNode
-	ReadAll() *CrawlmanNodes
-	Write(node *CrawlmanNode) bool
+	Read(id int64) *CrawlmanNode
+	ReadAll() error
+	Write(node *CrawlmanNode) error
+	Delete(id int64) error
 }
 
 const filePath = "./crawlmanConfig/"
 
 func GetAllConfig() *CrawlmanNodes {
 	if DBbuffer != nil {
-		nodes = DBbuffer.ReadAll()
+		DBbuffer.ReadAll()
 	} else {
 		files, err := ioutil.ReadDir(filePath)
 		if err != nil {
@@ -69,6 +70,10 @@ func PathExists(path string) (bool, error) {
 
 // 删除采集节点
 func (c *CrawlmanNode) delete() error {
+	if DBbuffer != nil {
+		err := DBbuffer.Delete(c.Id)
+		return err
+	}
 	var err error
 	c.lock.config.Lock()
 	defer c.lock.config.Unlock()
@@ -101,17 +106,18 @@ func (c *CrawlmanNode) toFile() error {
 		return err
 	}
 	if DBbuffer != nil {
-		ok := DBbuffer.Write(c)
-		if !ok {
-			return errors.New("write interface error")
+		err = DBbuffer.Write(c)
+		if err != nil {
+			return err
 		}
+		return nil
 	}
 	var f *os.File
 	c.lock.config.Lock()
 	defer c.lock.config.Unlock()
 	ok, _ := PathExists(filePath)
 	if !ok {
-		err := os.Mkdir(filePath, os.ModePerm)
+		err = os.Mkdir(filePath, os.ModePerm)
 		if err != nil {
 			fmt.Printf("mkdir failed![%v]\n", err)
 			return err
@@ -134,6 +140,7 @@ func (c *CrawlmanNode) toFile() error {
 	}
 	w.Flush()
 	f.Close()
+	return nil
 }
 
 // 将日志写入文件
