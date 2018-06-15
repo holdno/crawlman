@@ -14,7 +14,7 @@ import (
 
 var DBbuffer interface {
 	Read(id int64) (*CrawlmanNode, error)
-	ReadAll() error
+	ReadAll() ([]*CrawlmanNode, error)
 	Write(node *CrawlmanNode) error
 	Delete(id int64) error
 }
@@ -23,7 +23,13 @@ const filePath = "./crawlmanConfig/"
 
 func GetAllConfig() *CrawlmanNodes {
 	if DBbuffer != nil {
-		DBbuffer.ReadAll()
+		nodeSlice, err := DBbuffer.ReadAll()
+		if err != nil {
+			panic(err)
+		}
+		for _, v := range nodeSlice {
+			nodes.Set(v.Id, v)
+		}
 	} else {
 		files, err := ioutil.ReadDir(filePath)
 		if err != nil {
@@ -72,6 +78,9 @@ func PathExists(path string) (bool, error) {
 func (c *CrawlmanNode) delete() error {
 	if DBbuffer != nil {
 		err := DBbuffer.Delete(c.Id)
+		if err != nil {
+			nodes.Delete(c.Id)
+		}
 		return err
 	}
 	var err error
