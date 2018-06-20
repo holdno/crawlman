@@ -80,6 +80,7 @@ func (c *CrawlmanNode) Health() string {
 func (c *CrawlmanNode) getList() {
 	defer func() {
 		if err := recover(); err != nil {
+			c.wLog(fmt.Sprintf("panic:%v", err))
 			c.warning = 2
 			c.Stop()
 		}
@@ -87,9 +88,13 @@ func (c *CrawlmanNode) getList() {
 	req, _ := http.NewRequest(http.MethodGet, c.Url, nil)
 	req.Header.Set("User-Agent", c.UserAgent[rand.Intn(len(c.UserAgent))])
 	req.Header.Set("referer", c.Url)
-	resp, err := c.client.Do(req)
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		c.wLog(fmt.Sprintf("%s无法访问,可能是访问过于频繁IP遭到封禁", c.Url))
+		c.warning = 2
+		c.Stop()
+		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
