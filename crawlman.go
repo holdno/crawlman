@@ -334,10 +334,9 @@ func NewCrawlerNode() *CrawlmanNode {
 }
 
 func (c *CrawlmanNode) start() {
-	_, ok := engine.Load(c.Id)
-	fmt.Println(ok)
+	nodes, ok := engine.Load(c.Id)
 	if ok {
-		c.Stop()
+		nodes.(*CrawlmanNode).Stop()
 	}
 	c.stop = make(chan struct{})
 	c.wLog(c.Name + ",crawler start")
