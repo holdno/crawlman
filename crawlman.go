@@ -227,6 +227,7 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 							content, exist = node.Attr(vv.Result)
 							if !exist {
 								// 通知列表数据结构发生了变化
+								c.wLog(fmt.Sprintf("%s列表数据结构发生变化:%s", vv.Aim, vv.Dom))
 							}
 						} else if vv.Method == "" {
 							if vv.Result == "text" {
@@ -235,13 +236,35 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 									fmt.Println("text:", content)
 								}
 							} else if vv.Result == "html" {
-								content, err = node.Html()
-								if err != nil {
-									if c.warning < 2 {
-										c.warning = 2
+								var str = strings.Builder{}
+								var exist = false
+								node.Find("p,pre").Each(func(index int, selection *goquery.Selection) {
+									exist = true
+									// 增加图片采集
+									img, ok := selection.Find("img").Attr("src")
+									if ok {
+										str.WriteString("<p><img class='wscnph' src='")
+										str.WriteString(img)
+										str.WriteString("'></p>")
 									}
-									c.wLog(fmt.Sprintf("富文本内容采集失败,%v;", err))
-									return
+									text := strings.TrimSpace(selection.Text())
+									if text != "" {
+										str.WriteString("<p>")
+										str.WriteString(text)
+										str.WriteString("</p>")
+									}
+								})
+								if exist {
+									content = str.String()
+								} else {
+									content, err = node.Html()
+									if err != nil {
+										if c.warning < 2 {
+											c.warning = 2
+										}
+										c.wLog(fmt.Sprintf("富文本内容采集失败,%v;", err))
+										return
+									}
 								}
 							}
 						}
