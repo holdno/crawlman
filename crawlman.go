@@ -185,11 +185,15 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 			}
 			if v.Aim == "href" || v.Aim == "image" {
 				if !strings.Contains(content, "://") {
-					lastStr := c.Url[len(c.Url)-1 : len(c.Url)]
-					if lastStr == "/" {
-						content = fmt.Sprintf("%s%s", c.Url[0:len(c.Url)-1], content)
-
-					}
+					// lastStr := c.Url[len(c.Url)-1 : len(c.Url)]
+					url := strings.Replace(strings.Replace(c.Url, "http://", "", -1), "https://", "", -1)
+					urls := strings.Split(url, "/")
+					content = fmt.Sprintf("%s%s", urls[0], content)
+					//if lastStr == "/" {
+					//	content = fmt.Sprintf("%s%s", c.Url[0:len(c.Url)-1], content)
+					//} else {
+					//	content = fmt.Sprintf("%s%s", c.Url, content)
+					//}
 				}
 			}
 			if v.Aim == "href" && content != "" {
