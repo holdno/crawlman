@@ -172,7 +172,7 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 					if c.warning < 1 {
 						c.warning = 1
 					}
-					c.wLog("列表数据结构发生了变化")
+					c.wLog(fmt.Sprintf("%s列表数据结构发生变化:%s", v.Aim, v.Dom))
 					return
 				}
 			} else if v.Method == "" {
