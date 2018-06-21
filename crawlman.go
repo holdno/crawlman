@@ -264,6 +264,9 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 										str.WriteString("<p><img class='wscnph' src='")
 										str.WriteString(img)
 										str.WriteString("'></p>")
+										if m.MustGet("image") == "" {
+											m.Set("image", img)
+										}
 									}
 									text := strings.TrimSpace(selection.Text())
 									if text != "" {
