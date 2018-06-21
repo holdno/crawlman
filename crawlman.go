@@ -190,10 +190,10 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 						url  string
 						http string
 					)
-					if strings.Contains(content, "http://") {
+					if strings.Contains(c.Url, "http://") {
 						url = strings.Replace(c.Url, "http://", "", -1)
 						http = "http://"
-					} else if strings.Contains(content, "https://") {
+					} else if strings.Contains(c.Url, "https://") {
 						url = strings.Replace(c.Url, "https://", "", -1)
 						http = "https://"
 					} else {
