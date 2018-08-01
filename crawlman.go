@@ -242,7 +242,7 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 					if vv.Dom != "" && vv.Result != "" {
 						node := doc.Find(vv.Dom)
 						if vv.Method != "" {
-							content, exist = node.Attr(vv.Result)
+							content, exist = node.Attr(vv.Method)
 							if !exist {
 								// 通知列表数据结构发生了变化
 								c.wLog(fmt.Sprintf("%s列表数据结构发生变化:%s", vv.Aim, vv.Dom))
