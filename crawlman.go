@@ -92,7 +92,7 @@ func (c *CrawlmanNode) getList() {
 	resp, err := client.Do(req)
 	if err != nil {
 		c.wLog(fmt.Sprintf("%s无法访问,可能是访问过于频繁IP遭到封禁", c.Url))
-		c.warning = 1
+		c.warning = 2
 		c.Stop()
 		return
 	}
@@ -105,10 +105,7 @@ func (c *CrawlmanNode) getList() {
 		c.wLog(fmt.Sprintf("目标网站无法打开，%s;", resp.Status))
 		return
 	}
-	e, _, err := determineEncoding(resp.Body)
-	if err != nil {
-		return
-	}
+	e, _ := determineEncoding(resp.Body)
 	utf8Reader := transform.NewReader(resp.Body, e.NewDecoder())
 	doc, err := goquery.NewDocumentFromReader(utf8Reader)
 
@@ -176,11 +173,10 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 						c.warning = 1
 					}
 					c.wLog(fmt.Sprintf("%s列表数据结构发生变化:%s", v.Aim, v.Dom))
-					break
+					return
 				}
 			} else if v.Method == "" {
 				if v.Result == "text" {
-					fmt.Println(v.Dom)
 					content = node.Text()
 					if content == "" {
 						fmt.Println("text:", content)
@@ -229,10 +225,7 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 					return
 				}
 				defer resp.Body.Close()
-				e, _, err := determineEncoding(resp.Body)
-				if err != nil {
-					return
-				}
+				e, _ := determineEncoding(resp.Body)
 				utf8Reader := transform.NewReader(resp.Body, e.NewDecoder())
 				doc, err := goquery.NewDocumentFromReader(utf8Reader)
 				if err != nil {
@@ -249,12 +242,9 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 					if vv.Dom != "" && vv.Result != "" {
 						node := doc.Find(vv.Dom)
 						if vv.Method != "" {
-							content, exist = node.Attr(vv.Method)
+							content, exist = node.Attr(vv.Result)
 							if !exist {
 								// 通知列表数据结构发生了变化
-								if c.warning < 1 {
-									c.warning = 1
-								}
 								c.wLog(fmt.Sprintf("%s列表数据结构发生变化:%s", vv.Aim, vv.Dom))
 							}
 						} else if vv.Method == "" {
@@ -294,7 +284,7 @@ func (c *CrawlmanNode) getContent(selection *goquery.Selection, m *SyncMap) {
 											c.warning = 2
 										}
 										c.wLog(fmt.Sprintf("富文本内容采集失败,%v;", err))
-										break
+										return
 									}
 								}
 							}
@@ -368,7 +358,6 @@ func (c *CrawlmanNode) start() {
 	c.stop = make(chan struct{})
 	c.wLog(c.Name + ",crawler start")
 	c.Status = "open"
-	c.warning = 0
 	engine.Store(c.Id, 1)
 	c.toFile()
 	ticker := time.NewTicker(c.Interval * time.Second)
@@ -414,14 +403,13 @@ func (c *CrawlmanNode) Error(str string) {
 	c.wLog(str)
 }
 
-func determineEncoding(r io.Reader) (encoding.Encoding, string, error) {
+func determineEncoding(r io.Reader) (encoding.Encoding, string) {
 	bytes, err := bufio.NewReader(r).Peek(1024)
 	if err != nil {
-		// panic(err)
-		return nil, "", err
+		panic(err)
 	}
 	e, n, _ := charset.DetermineEncoding(bytes, "")
-	return e, n, err
+	return e, n
 }
 
 func GetNode(id int64) (*CrawlmanNode, bool) {
